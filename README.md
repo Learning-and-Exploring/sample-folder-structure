@@ -1,163 +1,58 @@
-# Notion API
-# Event-Driven Microservices with Kafka & PostgreSQL
+# 🚀 Notion API: Event-Driven Microservices
+[![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Kafka](https://img.shields.io/badge/Apache%20Kafka-000?style=for-the-badge&logo=apachekafka&logoColor=white)](https://kafka.apache.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 
-<p align="center">
-  <img src="https://nodejs.org/static/images/logo.svg" width="120" />
-  <img src="https://kafka.apache.org/images/apache-kafka.png" width="120" />
-  <img src="https://www.postgresql.org/media/img/about/press/elephant.png" width="120" />
-  <img src="https://www.docker.com/wp-content/uploads/2022/03/Moby-logo.png" width="120" />
-</p>
-
-A production-style microservices backend built with **TypeScript, PostgreSQL, Kafka, and Docker**.
-
-This project demonstrates a real-world **event-driven architecture** using asynchronous communication between services.
+A high-performance, distributed backend blueprint demonstrating **Event-Driven Architecture (EDA)**. This project leverages asynchronous messaging to decouple services and ensure high availability.
 
 ---
 
-# 🏗 Architecture Overview
+## 🏗 Architecture Overview
 
-```
-Client
-   ↓
-API Gateway
-   ↓
-User Service ── Kafka (transaction_created) ──▶ Transaction Service
-      │                                              │
-      ▼                                              ▼
- Postgres (user-db)                           Postgres (transaction-db)
-```
+The system follows the **Database-per-Service** pattern, ensuring each microservice has complete data sovereignty and its own schema.
 
----
 
-# 📦 Project Structure
 
-```
-.
-├── api-gateway/
-├── user-service/
-├── note-service/
-├── docker-compose.yml
-└── README.md
-```
-
-### API Gateway
-- Single entry point
-- Routes client requests to internal services
-
-### User Service
-- Manages users
-- Publishes `transaction_created` events to Kafka
-- Owns its PostgreSQL database
-
-### Transaction / Note Service
-- Consumes Kafka events
-- Processes and stores data
-- Owns its own PostgreSQL database
+### Component Breakdown
+| Component | Responsibility |
+| :--- | :--- |
+| **API Gateway** | Entry point for all clients; handles request routing and proxying. |
+| **User Service** | Manages user lifecycles and triggers downstream events via Kafka. |
+| **Transaction Service** | Consumes events and manages state-heavy transaction logs. |
+| **Message Broker** | Apache Kafka orchestrates asynchronous communication between nodes. |
 
 ---
 
-# 🚀 Tech Stack
+## 🛠 Tech Stack
 
-## Backend
-- Node.js
-- TypeScript
-- Express.js
-
-## Database
-- PostgreSQL 15
-- Prisma ORM
-
-## Messaging
-- Apache Kafka
-- Zookeeper
-
-## Infrastructure
-- Docker
-- Docker Compose
+* **Runtime:** Node.js (v18+) with TypeScript
+* **Framework:** Express.js
+* **ORM:** Prisma
+* **Messaging:** Apache Kafka + Zookeeper
+* **Database:** PostgreSQL 15
+* **Infrastructure:** Docker & Docker Compose
 
 ---
 
-# 🔄 Event Flow
+## 🔄 Event Flow Logic
 
-1. Client sends request to API Gateway.
-2. Gateway forwards request to User Service.
-3. User Service saves data to PostgreSQL.
-4. User Service publishes event to Kafka.
-5. Consumer service listens to Kafka topic.
-6. Consumer service processes and persists data.
+1.  **Request:** Client sends a `POST` request to the **API Gateway**.
+2.  **Persistence:** **User Service** writes the primary record to its Postgres database.
+3.  **Produce:** **User Service** pushes a `transaction_created` message to a Kafka topic.
+4.  **Consume:** **Transaction Service** (subscriber) picks up the message from the queue.
+5.  **Process:** **Transaction Service** performs secondary logic and persists the result in its own DB.
 
 ---
 
-# ▶ Running the Project
-
-Start all services:
+## 📂 Project Structure
 
 ```bash
-docker-compose up --build
-```
-
-API Gateway:
-
-```
-http://localhost:4000
-```
-
----
-
-# 🧠 Why This Architecture
-
-- Independent service scaling
-- Loose coupling between services
-- Reliable asynchronous communication
-- Database per service pattern
-- Production-ready structure
-
----
-
-# 📈 Future Improvements
-
-- JWT Authentication
-- Outbox Pattern
-- Dead Letter Queue
-- Centralized Logging
-- Monitoring (Prometheus + Grafana)
-- Kubernetes Deployment
-- CI/CD Integration
-
----
-
-This repository serves as a foundational blueprint for building scalable, distributed backend systems.
-
-```
-note/
-├── docker-compose.yml
-│
-├── api-gateway/
-│   ├── src/index.ts
-│   ├── package.json
-│   ├── tsconfig.json
-│   └── Dockerfile
-│
-├── user-service/
-│   ├── prisma/
-│   │   └── schema.prisma
-│   ├── src/
-│   │   ├── index.ts
-│   │   ├── kafka/producer.ts
-│   │   └── repository/user.repository.ts
-│   ├── package.json
-│   ├── tsconfig.json
-│   └── Dockerfile
-│
-├── transaction-service/
-│   ├── prisma/
-│   │   └── schema.prisma
-│   ├── src/
-│   │   ├── index.ts
-│   │   ├── kafka/consumer.ts
-│   │   └── repository/transaction.repository.ts
-│   ├── package.json
-│   ├── tsconfig.json
-│   └── Dockerfile
-
-```
+.
+├── api-gateway/            # Central entry point (Port 4000)
+├── user-service/           # User logic & Kafka Producer
+│   └── prisma/             # Schema for user-db
+├── transaction-service/    # Business logic & Kafka Consumer
+│   └── prisma/             # Schema for transaction-db
+└── docker-compose.yml      # Full-stack orchestration
